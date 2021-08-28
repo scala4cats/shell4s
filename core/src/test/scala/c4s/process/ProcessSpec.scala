@@ -7,6 +7,7 @@ import cats.effect._
 import cats.syntax.all._
 import munit.CatsEffectSuite
 import java.io.File
+import cats.effect.Resource
 
 class ProcessSpec extends CatsEffectSuite {
   import c4s.process.syntax._
@@ -89,7 +90,7 @@ class ProcessSpec extends CatsEffectSuite {
   }
 
   val withProcess: Resource[IO, Process[IO]] =
-    Blocker[IO]
+    Resource.unit[IO]
       .map(x => Process.impl[IO](x))
 
   def createTmpDirectory[F[_]: Sync]: Resource[F, Path] =

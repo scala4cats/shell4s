@@ -6,6 +6,7 @@ import java.io.{InputStream, OutputStream}
 import java.nio.file.Path
 import fs2.Stream
 import fs2.io.writeOutputStream
+import cats.effect.MonadCancel
 
 trait Process[F[_]] {
   def run(command: String, input: Option[Stream[F, Byte]], path: Option[Path]): F[ProcessResult[F]]
@@ -23,9 +24,7 @@ object Process {
   final def runInPath[F[_]: Process](command: String, path: Path): F[ProcessResult[F]] =
     Process[F].run(command, None, path.some)
 
-  final def impl[F[_]: Concurrent: ContextShift: Extract](
-      blocker: Blocker
-  ): Process[F] = new ProcessImpl[F](blocker)
+  final def impl[F[_]: Concurrent: ContextShift: Extract]: Process[F] = new ProcessImpl[F](blocker)
 
   private[this] final class ProcessImpl[F[_]: Concurrent: ContextShift: Extract](
       blocker: Blocker
@@ -38,7 +37,7 @@ object Process {
         outputRef <- atomicReference
         errorRef <- atomicReference
         fout = toOutputStream(input)
-        exitValue <- Bracket[F, Throwable].bracket(Sync[F].delay {
+        exitValue <- MonadCancel[F, Throwable].bracket(Sync[F].delay {
           val p = new ProcessIO(
             fout andThen (Extract[F].extract),
             redirectInputStream(outputRef, _),
