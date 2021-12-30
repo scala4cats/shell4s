@@ -4,6 +4,7 @@ import cats.effect._
 import org.typelevel.log4cats.testing.TestingLogger
 import org.typelevel.log4cats.testing.TestingLogger._
 import munit.CatsEffectSuite
+import cats.effect.Resource
 
 class LoggerProcessSpec extends CatsEffectSuite {
   import c4s.process.syntax._
@@ -37,7 +38,7 @@ class LoggerProcessSpec extends CatsEffectSuite {
 
   def withProcess: Resource[IO, (Process[IO], TestingLogger[IO])] = {
     val logger = TestingLogger.impl[IO]()
-    Blocker[IO]
+    Resource.unit[IO]
       .map(x => (Process.impl[IO](x).withLogger(logger), logger))
   }
 
